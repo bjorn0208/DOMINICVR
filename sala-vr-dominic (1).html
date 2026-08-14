@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dominic VR - Sala Básica</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.5.0/aframe.min.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    #info {
+      position: fixed; top: 10px; left: 10px; z-index: 999;
+      background: rgba(0,0,0,0.6); color: #fff; padding: 8px 14px;
+      border-radius: 8px; font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">Dominic VR — Sala Básica · clique em "Enter VR" no canto inferior direito</div>
+
+  <a-scene background="color: #1a1a2e" shadow="type: pcfsoft">
+
+    <!-- ===== ASSETS ===== -->
+    <a-assets>
+      <img id="floorTex" src="https://cdn.aframe.io/a-painter/images/floor.jpg">
+      <!-- Slides de exemplo (troque pelos seus, na ordem que quiser) -->
+      <img id="slide0" src="https://picsum.photos/seed/dominic1/1024/576" crossorigin="anonymous">
+      <img id="slide1" src="https://picsum.photos/seed/dominic2/1024/576" crossorigin="anonymous">
+      <img id="slide2" src="https://picsum.photos/seed/dominic3/1024/576" crossorigin="anonymous">
+    </a-assets>
+
+    <!-- ===== ILUMINAÇÃO ===== -->
+    <a-light type="ambient" color="#8892b0" intensity="0.6"></a-light>
+    <a-light type="directional" color="#ffffff" intensity="0.8" position="2 4 2" castShadow="true"></a-light>
+    <a-light type="point" color="#ffcc88" intensity="0.5" position="0 2.5 -3"></a-light>
+
+    <!-- ===== QUARTO (dimensões: 8m x 5m x 4m) ===== -->
+    <!-- Chão -->
+    <a-plane rotation="-90 0 0" width="8" height="8" color="#3a3a52" shadow="receive: true"></a-plane>
+
+    <!-- Teto -->
+    <a-plane rotation="90 0 0" position="0 4 0" width="8" height="8" color="#22223a"></a-plane>
+
+    <!-- Parede fundo (onde fica o "palco"/tela de apresentação) -->
+    <a-plane position="0 2 -4" width="8" height="4" color="#2b2b45"></a-plane>
+
+    <!-- Parede frente -->
+    <a-plane position="0 2 4" rotation="0 180 0" width="8" height="4" color="#2b2b45"></a-plane>
+
+    <!-- Parede esquerda -->
+    <a-plane position="-4 2 0" rotation="0 90 0" width="8" height="4" color="#252540"></a-plane>
+
+    <!-- Parede direita -->
+    <a-plane position="4 2 0" rotation="0 -90 0" width="8" height="4" color="#252540"></a-plane>
+
+    <!-- ===== PALCO / TELA DE APRESENTAÇÃO ===== -->
+    <!-- Moldura -->
+    <a-box position="0 2.1 -3.92" width="3.3" height="2" depth="0.08" color="#0f0f1e"></a-box>
+
+    <!-- Tela do slide (a textura é trocada via JS) -->
+    <a-plane id="slideScreen" position="0 2.1 -3.87" width="3" height="1.7"
+             material="src: #slide0; shader: flat"></a-plane>
+
+    <!-- Contador de slide -->
+    <a-text id="slideCounter" value="1 / 3" position="1.3 1.1 -3.85" color="#00d4ff"
+             width="2.5" align="right"></a-text>
+
+    <!-- Botão VOLTAR (clicável com laser do Quest) -->
+    <a-entity id="btnPrev" position="-2 1.1 -3.7"
+              geometry="primitive: plane; width: 0.5; height: 0.3"
+              material="color: #2b2b45; shader: flat"
+              text="value: < ANTERIOR; align: center; width: 1.6; color: #fff"
+              class="clickable"></a-entity>
+
+    <!-- Botão AVANÇAR (clicável com laser do Quest) -->
+    <a-entity id="btnNext" position="2 1.1 -3.7"
+              geometry="primitive: plane; width: 0.5; height: 0.3"
+              material="color: #2b2b45; shader: flat"
+              text="value: PRÓXIMO >; align: center; width: 1.6; color: #fff"
+              class="clickable"></a-entity>
+
+    <!-- Pódio simples -->
+    <a-box position="0 0.5 -2.5" width="0.6" height="1" depth="0.4" color="#4a4a6a" shadow="cast: true"></a-box>
+
+    <!-- ===== ASSENTOS (fileira simples de referência) ===== -->
+    <a-entity id="cadeiras"></a-entity>
+
+    <!-- ===== PONTO DE ENTRADA DO USUÁRIO (câmera) ===== -->
+    <a-entity id="rig" position="0 0 2" movement-controls>
+      <a-entity camera position="0 1.6 0" look-controls wasd-controls raycaster="objects: .clickable" cursor="rayOrigin: mouse; fuse: false"></a-entity>
+      <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 10"></a-entity>
+      <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10"></a-entity>
+    </a-entity>
+
+  </a-scene>
+
+  <script>
+    // Gera 12 cadeiras simples em 3 fileiras, só como referência visual
+    const cadeirasContainer = document.querySelector('#cadeiras');
+    const linhas = 3, colunas = 4;
+    for (let l = 0; l < linhas; l++) {
+      for (let c = 0; c < colunas; c++) {
+        const cadeira = document.createElement('a-box');
+        const x = (c - (colunas - 1) / 2) * 1.2;
+        const z = 1.5 + l * 1.2;
+        cadeira.setAttribute('position', `${x} 0.25 ${z}`);
+        cadeira.setAttribute('width', '0.5');
+        cadeira.setAttribute('height', '0.5');
+        cadeira.setAttribute('depth', '0.5');
+        cadeira.setAttribute('color', '#5a5a7a');
+        cadeira.setAttribute('shadow', 'cast: true');
+        cadeirasContainer.appendChild(cadeira);
+      }
+    }
+
+    // ===== SISTEMA DE SLIDES =====
+    // Para adicionar mais slides: coloque as imagens em <a-assets> (id="slide3", "slide4"...)
+    // e aumente o array abaixo na mesma ordem.
+    const slideIds = ['#slide0', '#slide1', '#slide2'];
+    let currentSlide = 0;
+
+    const screen = document.querySelector('#slideScreen');
+    const counter = document.querySelector('#slideCounter');
+
+    function renderSlide() {
+      screen.setAttribute('material', 'src', slideIds[currentSlide]);
+      counter.setAttribute('value', `${currentSlide + 1} / ${slideIds.length}`);
+    }
+
+    function nextSlide() {
+      currentSlide = Math.min(currentSlide + 1, slideIds.length - 1);
+      renderSlide();
+    }
+
+    function prevSlide() {
+      currentSlide = Math.max(currentSlide - 1, 0);
+      renderSlide();
+    }
+
+    // Clique/laser nos botões (funciona com mouse no desktop e controle no Quest)
+    document.querySelector('#btnNext').addEventListener('click', nextSlide);
+    document.querySelector('#btnPrev').addEventListener('click', prevSlide);
+
+    // Feedback visual simples ao passar o cursor/laser
+    ['#btnNext', '#btnPrev'].forEach(sel => {
+      const el = document.querySelector(sel);
+      el.addEventListener('mouseenter', () => el.setAttribute('material', 'color', '#00d4ff'));
+      el.addEventListener('mouseleave', () => el.setAttribute('material', 'color', '#2b2b45'));
+    });
+
+    // Navegação também pelo teclado (útil pra testar no desktop antes de ir pro Quest)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') nextSlide();
+      if (e.key === 'ArrowLeft') prevSlide();
+    });
+
+    renderSlide();
+  </script>
+</body>
+</html>
